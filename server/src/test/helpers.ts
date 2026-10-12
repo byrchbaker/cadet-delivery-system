@@ -1,6 +1,3 @@
-import fs from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
 import request from 'supertest';
 import { addDays, todayIn } from '@cds/shared';
 import { createApp } from '../app';
@@ -17,8 +14,6 @@ export interface Sent {
 }
 
 export function setupTestApp() {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cds-test-'));
-  process.env.DATA_DIR = dir;
   initDb(':memory:');
   clearSettingsCache();
   const sent: Sent[] = [];

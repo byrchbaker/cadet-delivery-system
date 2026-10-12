@@ -1,8 +1,13 @@
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 // Both src/config.ts (dev) and dist/index.js (prod) sit two levels below the repo root.
 const repoRoot = fileURLToPath(new URL('../../', import.meta.url));
+
+// Pick up a .env file at the repo root when running outside Docker.
+const envFile = path.join(repoRoot, '.env');
+if (!process.env.VITEST && fs.existsSync(envFile)) process.loadEnvFile(envFile);
 
 const env = process.env;
 

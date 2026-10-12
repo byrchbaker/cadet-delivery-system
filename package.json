@@ -9,7 +9,7 @@
     "web"
   ],
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "scripts": {
     "dev": "concurrently -k -n api,web -c blue,gray \"npm:dev -w server\" \"npm:dev -w web\"",

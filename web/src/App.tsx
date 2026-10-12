@@ -1,4 +1,4 @@
-import { lazy, Suspense, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, type ReactNode } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { useAuth } from './lib/auth';
 import { usePublicInfo } from './lib/queries';
@@ -69,6 +69,9 @@ function OrdersSwitch() {
 export function App() {
   const { data: info, isLoading } = usePublicInfo();
   const location = useLocation();
+  useEffect(() => {
+    if (info?.profile.businessName) document.title = info.profile.businessName;
+  }, [info?.profile.businessName]);
   if (isLoading) return <Loading />;
   if (info?.needsSetup && location.pathname !== '/setup') return <Navigate to="/setup" replace />;
 
