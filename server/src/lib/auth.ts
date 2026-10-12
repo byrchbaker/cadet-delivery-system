@@ -119,6 +119,15 @@ export function requirePerm(perm: HelperPermission) {
   };
 }
 
+/** Any one of several permissions is enough. */
+export function requireAnyPerm(...perms: HelperPermission[]) {
+  return (req: Request, _res: Response, next: NextFunction): void => {
+    if (!req.user) return next(new HttpError(401, 'Please sign in.'));
+    if (!perms.some((p) => can(req.user, p))) return next(forbidden());
+    next();
+  };
+}
+
 export function can(user: AuthUser | undefined, perm: HelperPermission): boolean {
   if (!user) return false;
   return hasPermission({ role: user.role, status: user.status, permissions: user.perms }, perm);

@@ -107,3 +107,23 @@ describe('helpers', () => {
     expect(res.status).toBe(409);
   });
 });
+
+describe('helper permission edges', () => {
+  it('lets a claim-only helper open the run sheet and see claimable orders', async () => {
+    const h = await apply('Cleo', 'cleo@example.com');
+    await ctx.org.post(`/api/admin/team/${h.id}/approve`).send({ permissions: ['claim'] });
+    const o = await ctx.parent.post('/api/orders').send(foodOrder(ctx));
+    await ctx.org.post(`/api/orders/${o.body.id}/status`).send({ status: 'confirmed' });
+    const sheet = await h.agent.get(`/api/staff/run-sheet?date=${o.body.serviceDate}`);
+    expect(sheet.status).toBe(200);
+    expect(sheet.body.map((x: { id: number }) => x.id)).toContain(o.body.id);
+  });
+
+  it('keeps the customer directory from helpers without people or dispatch access', async () => {
+    const h = await apply('Dee', 'dee@example.com');
+    await ctx.org.post(`/api/admin/team/${h.id}/approve`).send({ permissions: ['deliver'] });
+    expect((await h.agent.get('/api/staff/people')).status).toBe(403);
+    await ctx.org.patch(`/api/admin/team/${h.id}`).send({ permissions: ['deliver', 'dispatch'] });
+    expect((await h.agent.get('/api/staff/people')).status).toBe(200);
+  });
+});

@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { addDays, dateSchema, emailSchema, phoneSchema, todayIn, toE164, type DashboardDTO } from '@cds/shared';
 import { db, tx } from '../db';
-import { can, me, requireOrganizer, requirePerm, requireStaff } from '../lib/auth';
+import { can, me, requireAnyPerm, requireOrganizer, requirePerm, requireStaff } from '../lib/auth';
 import { badRequest, intParam, notFound, parse } from '../lib/http';
 import { listOrders } from '../lib/orders';
 import { timezone } from '../lib/settings';
@@ -48,7 +48,7 @@ staffRoutes.get('/staff/dashboard', requireStaff, (req, res) => {
 });
 
 /** Today's work for Run Mode: everything the viewer can move along, in time order. */
-staffRoutes.get('/staff/run-sheet', requirePerm('deliver'), (req, res) => {
+staffRoutes.get('/staff/run-sheet', requireAnyPerm('deliver', 'claim', 'dispatch'), (req, res) => {
   const user = me(req);
   const date = typeof req.query.date === 'string' ? req.query.date : todayIn(timezone());
   // Helpers only ever see their own and claimable orders; dispatchers can narrow to "mine".
@@ -70,7 +70,8 @@ staffRoutes.get('/staff/team', requireStaff, (_req, res) => {
 // ---------------------------------------------------------------------------
 // Customer directory
 
-staffRoutes.get('/staff/people', requirePerm('people'), (req, res) => {
+// Dispatchers can search people too, so they can log orders for them.
+staffRoutes.get('/staff/people', requireAnyPerm('people', 'dispatch'), (req, res) => {
   const role = typeof req.query.role === 'string' && ['parent', 'cadet'].includes(req.query.role) ? req.query.role : null;
   const q = typeof req.query.q === 'string' ? req.query.q.trim() : '';
   const where = ["role IN ('parent','cadet')"];

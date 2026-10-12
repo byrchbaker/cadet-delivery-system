@@ -261,7 +261,7 @@ adminRoutes.get('/admin/reports', (req, res) => {
          COALESCE(SUM(CASE WHEN payment_status IN ('unpaid','reported') THEN fee_cents + tip_cents END), 0) outstanding,
          COALESCE(SUM(tip_cents), 0) tips,
          COUNT(DISTINCT cadet_id) cadets,
-         SUM(CASE WHEN status = 'delivered' THEN 1 ELSE 0 END) delivered
+         COALESCE(SUM(CASE WHEN status = 'delivered' THEN 1 ELSE 0 END), 0) delivered
        ${base}`,
     )
     .get(p);

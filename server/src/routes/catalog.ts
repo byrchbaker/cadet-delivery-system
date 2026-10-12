@@ -5,7 +5,7 @@ import { db } from '../db';
 import { me, requireActive, requireOrganizer, requirePerm, can } from '../lib/auth';
 import { badRequest, intParam, notFound, parse } from '../lib/http';
 import { listLocations, listRuns, listServices } from '../lib/catalog';
-import { timezone } from '../lib/settings';
+import { getSettings, timezone } from '../lib/settings';
 import { broadcast } from '../realtime';
 
 export const catalogRoutes = Router();
@@ -23,6 +23,16 @@ catalogRoutes.get('/runs', requireActive, (req, res) => {
   const from = typeof req.query.from === 'string' ? req.query.from : all ? addDays(todayIn(timezone()), -14) : todayIn(timezone());
   const runs = listRuns({ from, all });
   res.json(all ? runs : runs.filter((r) => r.isOpen));
+});
+
+/** Payment options and the shipping address are shown to signed-in families only. */
+catalogRoutes.get('/customer-info', requireActive, (_req, res) => {
+  const payments = getSettings('payments');
+  const profile = getSettings('profile');
+  res.json({
+    payments: { methods: payments.methods.filter((m) => m.enabled), allowTips: payments.allowTips, instructions: payments.instructions },
+    contact: { ownerName: profile.ownerName, phone: profile.phone, email: profile.email, packageAddress: profile.packageAddress },
+  });
 });
 
 // --- Services (organizer) --------------------------------------------------

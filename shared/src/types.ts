@@ -200,7 +200,7 @@ export interface PublicInfoDTO {
   };
   appearance: { theme: string; allowUserTheme: boolean };
   registration: { openSignup: boolean; helperApplications: boolean };
-  scheduling: { timezone: string; minLeadHours: number; windowStart: string; windowEnd: string };
+  scheduling: { timezone: string; minLeadHours: number; windowStart: string; windowEnd: string; blackouts: { date: string; reason: string }[] };
   lists: { classYears: string[]; squadrons: string[]; dorms: string[] };
   services: ServiceDTO[];
   runs: RunDTO[];

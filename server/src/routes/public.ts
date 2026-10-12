@@ -44,7 +44,7 @@ publicRoutes.get('/public/info', (_req, res) => {
     },
     appearance: getSettings('appearance'),
     registration: getSettings('registration'),
-    scheduling: { timezone: sched.timezone, minLeadHours: sched.minLeadHours, windowStart: sched.windowStart, windowEnd: sched.windowEnd },
+    scheduling: { timezone: sched.timezone, minLeadHours: sched.minLeadHours, windowStart: sched.windowStart, windowEnd: sched.windowEnd, blackouts: sched.blackouts },
     lists: getSettings('lists'),
     services: listServices(),
     runs: listRuns({ from: todayIn(timezone()) }).filter((r) => r.isOpen),

@@ -1,8 +1,12 @@
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+// Both src/config.ts (dev) and dist/index.js (prod) sit two levels below the repo root.
+const repoRoot = fileURLToPath(new URL('../../', import.meta.url));
 
 const env = process.env;
 
-const dataDir = path.resolve(env.DATA_DIR ?? path.join(process.cwd(), 'data'));
+const dataDir = path.resolve(env.DATA_DIR ?? path.join(repoRoot, 'data'));
 
 export const config = {
   port: Number(env.PORT ?? 8080),
@@ -17,7 +21,7 @@ export const config = {
   isProd: env.NODE_ENV === 'production',
   isTest: env.NODE_ENV === 'test' || !!env.VITEST,
   trustProxy: env.TRUST_PROXY ?? 'loopback, linklocal, uniquelocal',
-  webDist: env.WEB_DIST ?? path.resolve(process.cwd(), env.WEB_DIST_REL ?? '../web/dist'),
+  webDist: env.WEB_DIST ?? path.join(repoRoot, 'web', 'dist'),
   /** Optional provider configuration via environment (overrides the settings screen). */
   smtp: env.SMTP_HOST
     ? {
