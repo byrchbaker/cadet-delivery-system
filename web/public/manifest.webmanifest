@@ -1,0 +1,9 @@
+{
+  "name": "Cadet Delivery",
+  "short_name": "Delivery",
+  "start_url": "/app",
+  "display": "standalone",
+  "background_color": "#f2f4f7",
+  "theme_color": "#0a1f44",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}
