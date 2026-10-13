@@ -67,6 +67,7 @@ describe('order lifecycle', () => {
     const confirm = await ctx.org.post(`/api/orders/${id}/status`).send({ status: 'confirmed' });
     expect(confirm.body.status).toBe('confirmed');
 
+    await t.flush();
     t.sent.length = 0;
     const enRoute = await ctx.org.post(`/api/orders/${id}/status`).send({ status: 'en_route', etaMinutes: 15 });
     expect(enRoute.body.status).toBe('en_route');
@@ -193,6 +194,7 @@ describe('surprises', () => {
     expect(seen.body.createdBy.firstName).toBe('Someone');
     expect(seen.body.threadId).toBeNull();
 
+    await t.flush();
     t.sent.length = 0;
     await ctx.org.post(`/api/orders/${id}/status`).send({ status: 'en_route', etaMinutes: 10 });
     await t.flush();
@@ -200,5 +202,20 @@ describe('surprises', () => {
     expect(cadetTexts).toHaveLength(1);
     expect(cadetTexts[0].body).toContain('Heads up');
     expect(cadetTexts[0].body).not.toContain('Crumbl');
+  });
+});
+
+describe('site address', () => {
+  it('builds working links even when the address is entered without http://', async () => {
+    const settings = (await ctx.org.get('/api/admin/settings')).body;
+    await ctx.org.put('/api/admin/settings/profile').send({ ...settings.profile, siteUrl: '10.200.1.193:8080/' });
+    const created = await ctx.parent.post('/api/orders').send(foodOrder(ctx));
+    await ctx.org.post(`/api/orders/${created.body.id}/status`).send({ status: 'confirmed' });
+    await t.flush();
+    t.sent.length = 0;
+    await ctx.org.post(`/api/orders/${created.body.id}/status`).send({ status: 'en_route', etaMinutes: 10 });
+    await t.flush();
+    const text = t.sent.find((s) => s.channel === 'sms')!;
+    expect(text.body).toContain('http://10.200.1.193:8080/t/');
   });
 });

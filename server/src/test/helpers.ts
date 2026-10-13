@@ -1,7 +1,7 @@
 import request from 'supertest';
 import { addDays, todayIn } from '@cds/shared';
 import { createApp } from '../app';
-import { initDb } from '../db';
+import { db, initDb } from '../db';
 import { clearSettingsCache } from '../lib/settings';
 import { processQueue } from '../notify';
 import { setDrivers } from '../notify/providers';
@@ -33,9 +33,18 @@ export function setupTestApp() {
     const wrap = (method: 'get' | 'post' | 'patch' | 'put' | 'delete') => (url: string) => a[method](url).set('x-requested-with', 'cds');
     return { get: wrap('get'), post: wrap('post'), patch: wrap('patch'), put: wrap('put'), delete: wrap('delete'), raw: a };
   };
+  // Wait until every queued text/email has been handed to the recording drivers.
+  // (processQueue returns early if a run is already in progress, so poll the table.)
   const flush = async () => {
-    await new Promise((r) => setTimeout(r, 20));
-    await processQueue();
+    for (let i = 0; i < 100; i++) {
+      await new Promise((r) => setTimeout(r, 10));
+      await processQueue();
+      const { n } = db()
+        .prepare("SELECT COUNT(*) n FROM notifications WHERE status = 'pending' AND channel IN ('sms','email')")
+        .get() as { n: number };
+      if (n === 0) return;
+    }
+    throw new Error('Outbound queue did not drain');
   };
   return { app, agent, sent, flush };
 }

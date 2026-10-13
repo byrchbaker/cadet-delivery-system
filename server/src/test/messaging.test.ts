@@ -23,6 +23,7 @@ describe('messaging', () => {
     await ctx.org.get(`/api/threads/${direct.body.id}`);
     expect((await ctx.org.get('/api/threads')).body.find((x: { id: number }) => x.id === direct.body.id).unread).toBe(0);
 
+    await t.flush();
     t.sent.length = 0;
     await ctx.org.post(`/api/threads/${direct.body.id}/messages`).send({ body: 'Yes — 1800 works.' });
     await t.flush();

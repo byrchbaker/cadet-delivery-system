@@ -1,0 +1,22 @@
+# systemd unit for running without Docker (e.g. in a Proxmox LXC container).
+# Install: see "Option C" in docs/DEPLOY.md.
+[Unit]
+Description=Cadet Delivery System
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=cds
+Group=cds
+WorkingDirectory=/opt/cadet-delivery-system
+Environment=NODE_ENV=production
+Environment=DATA_DIR=/var/lib/cadet-delivery
+EnvironmentFile=-/opt/cadet-delivery-system/.env
+ExecStart=/usr/bin/node server/dist/index.js
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

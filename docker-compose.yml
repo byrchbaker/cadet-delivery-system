@@ -3,6 +3,8 @@ services:
   app:
     build: .
     image: cadet-delivery-system
+    # Always build locally — there's no published image to pull.
+    pull_policy: build
     restart: unless-stopped
     ports:
       - "8080:8080"

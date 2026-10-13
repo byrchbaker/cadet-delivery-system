@@ -11,6 +11,13 @@ if (!process.env.VITEST && fs.existsSync(envFile)) process.loadEnvFile(envFile);
 
 const env = process.env;
 
+/** Accept '10.0.0.5:8080' or 'example.com/' as well as full URLs. */
+export function normalizeUrl(raw: string | undefined | null): string {
+  const t = (raw ?? '').trim().replace(/\/+$/, '');
+  if (!t) return '';
+  return /^https?:\/\//i.test(t) ? t : `http://${t}`;
+}
+
 const dataDir = path.resolve(env.DATA_DIR ?? path.join(repoRoot, 'data'));
 
 export const config = {
@@ -22,7 +29,7 @@ export const config = {
   backupsDir: path.join(dataDir, 'backups'),
   backupKeep: Number(env.BACKUP_KEEP ?? 14),
   /** Public URL used in links inside texts and emails, e.g. https://delivery.example.com */
-  appUrl: (env.APP_URL ?? '').replace(/\/$/, ''),
+  appUrl: normalizeUrl(env.APP_URL),
   isProd: env.NODE_ENV === 'production',
   isTest: env.NODE_ENV === 'test' || !!env.VITEST,
   trustProxy: env.TRUST_PROXY ?? 'loopback, linklocal, uniquelocal',
