@@ -61,6 +61,7 @@ describe('helpers', () => {
     const claimed = await h.agent.post(`/api/orders/${id}/claim`).send({});
     expect(claimed.body.assignedTo.id).toBe(h.id);
 
+    await t.flush();
     t.sent.length = 0;
     const moving = await h.agent.post(`/api/orders/${id}/status`).send({ status: 'en_route', etaMinutes: 20 });
     expect(moving.status).toBe(200);

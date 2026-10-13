@@ -1,6 +1,6 @@
 import { SETTINGS_SCHEMAS, type SettingsSection, type TemplateKey, type TemplateOverride, TEMPLATE_KEYS } from '@cds/shared';
 import type { z } from 'zod';
-import { config } from '../config';
+import { config, normalizeUrl } from '../config';
 import { db, json } from '../db';
 
 type SectionValue<K extends SettingsSection> = z.infer<(typeof SETTINGS_SCHEMAS)[K]>;
@@ -58,5 +58,5 @@ export function timezone(): string {
 
 /** Absolute base URL for links in outgoing messages. */
 export function siteUrl(): string {
-  return (getSettings('profile').siteUrl || config.appUrl || `http://localhost:${config.port}`).replace(/\/$/, '');
+  return normalizeUrl(getSettings('profile').siteUrl) || config.appUrl || `http://localhost:${config.port}`;
 }
