@@ -36,15 +36,62 @@ Use the Dockerfile. Configure:
 - Health check path `/api/health`
 - A single instance (SQLite is a single-writer database; one instance easily handles this workload)
 
-## Option C — Plain Node.js
+## Option C — Plain Node.js (good for a Proxmox LXC container)
+
+No Docker needed — one Node.js process managed by systemd. This is the lightest option inside an LXC container. Run as root:
 
 ```bash
-npm ci
+# 1. Node.js 22
+apt-get update && apt-get install -y curl ca-certificates git
+curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+apt-get install -y nodejs
+
+# 2. The app, in /opt, owned by a dedicated user
+useradd --system --home /var/lib/cadet-delivery --shell /usr/sbin/nologin cds
+git clone <this repo> /opt/cadet-delivery-system
+cd /opt/cadet-delivery-system
+npm ci --ignore-scripts      # SQLite ships prebuilt; no compiler needed
 npm run build
-APP_URL=https://your-domain node server/dist/index.js
+cp .env.example .env         # set APP_URL; add SMTP/Twilio here if you like
+mkdir -p /var/lib/cadet-delivery && chown cds:cds /var/lib/cadet-delivery
+
+# 3. Start it now and on every boot
+cp deploy/cadet-delivery.service /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable --now cadet-delivery
+systemctl status cadet-delivery    # should say "active (running)"
+curl -s localhost:8080/api/health  # {"ok":true}
 ```
 
-Keep it running with systemd or pm2. Data is stored in `./data` unless `DATA_DIR` is set.
+Data (database, photos, nightly backups) lives in `/var/lib/cadet-delivery`. Logs: `journalctl -u cadet-delivery -f`.
+
+To update:
+
+```bash
+cd /opt/cadet-delivery-system
+git pull && npm ci --ignore-scripts && npm run build
+systemctl restart cadet-delivery
+```
+
+## Proxmox LXC and Docker
+
+If `docker compose up` in an LXC container fails with an error like
+
+```
+failed to solve: failed to read dockerfile: failed to mount /var/lib/docker/tmp/buildkit-mount…: permission denied
+```
+
+the container isn't allowed to run nested containers, so Docker has fallen back to its `vfs` storage driver, which can't build images. Either use **Option C** above (simplest), or enable nesting:
+
+1. On the **Proxmox host** (replace `105` with your container ID):
+   ```bash
+   pct set 105 --features nesting=1,keyctl=1
+   pct reboot 105
+   ```
+   Or in the web UI: select the container → **Options** → **Features** → tick **Nesting** (and **keyctl** for unprivileged containers) → reboot the container.
+2. Inside the container, check `docker info | grep "Storage Driver"`. It should now say `overlay2`.
+3. If it still says `vfs`, Docker is reusing its old storage. Before you have any data in the app, it's safe to reset it: `systemctl stop docker && rm -rf /var/lib/docker && systemctl start docker`. (Don't do this once the app holds real data — it deletes the data volume too.)
+4. Run `docker compose up -d` again.
 
 ## Configuration
 
