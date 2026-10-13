@@ -4,7 +4,8 @@ The app is a single Node.js process that serves both the website and the API, wi
 
 ## Requirements
 
-- A small Linux server or container host (1 vCPU / 512 MB RAM is plenty)
+- A small Linux server or container. **Running** the app takes about 100 MB of RAM. **Building** it (the `npm run build` step, which Docker also runs) needs about 400 MB more, so give the machine **1 GB of RAM** — or 512 MB plus 512 MB of swap.
+- About 1 GB of free disk for the code and dependencies, plus room for your data and backups
 - A persistent disk for `/data`
 - A domain name with HTTPS (most hosts provide this)
 
@@ -73,7 +74,19 @@ git pull && npm ci --ignore-scripts && npm run build
 systemctl restart cadet-delivery
 ```
 
-## Proxmox LXC and Docker
+## Proxmox LXC containers
+
+**Use Option C (plain Node.js) in an LXC container.** Docker inside LXC usually falls back to the `vfs` storage driver, which copies every file at every build step. Builds become extremely slow (tens of minutes) and use far more disk and memory.
+
+Make sure the container has enough memory to build. On the Proxmox host (replace `105` with your container ID):
+
+```bash
+pct set 105 --memory 1024 --swap 512
+```
+
+Or in the web UI: select the container → **Resources** → **Memory**. It takes effect immediately, no reboot needed. If a build stops with `Killed` or exit code `137`, the container ran out of memory.
+
+### If you still want Docker in LXC
 
 If `docker compose up` in an LXC container fails with an error like
 
